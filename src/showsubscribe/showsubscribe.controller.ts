@@ -44,39 +44,27 @@ export class ShowSubscribeController {
      * Usre can subscribe show
      * @param CreateShowSubscribeDto 
      * @returns 
-     */
+     
     @UseGuards(AuthGuard)
     @Get('/:slug/subscribe')
     showSubscribe(
         @Body(new ShowSubscribeValidatorPipe()) CreateShowSubscribeDto: CreateShowSubscribeDto
     ) {
         return this.showsubscribeservice.create(CreateShowSubscribeDto);
-    }
+    }*/
 
-    /**
-     * Server sent Events, Send show wise energy Counter
-     * @param req 
+     /**
+     * Usre can subscribe show
+     * @param CreateShowSubscribeDto 
      * @returns 
      */
-    @UseGuards(AuthGuard)
-    @Sse('pushvote')
-    async sse(
-        @Req() req: Request
-    ){
-        const showBlastEnergyCount = await this.getShowEventResponse(req.body.userId)
-        return interval(1000).pipe(map((_) => ({ data: `${JSON.stringify(showBlastEnergyCount)}` })));
-    }
+      @UseGuards(AuthGuard)
+      @Get('/:slug/subscribe/:userId')
+      showSubscribe(
+          @Body(new ShowSubscribeValidatorPipe()) CreateShowSubscribeDto: CreateShowSubscribeDto
+      ) {
+          return this.showsubscribeservice.create(CreateShowSubscribeDto);
+      }
 
-    /**
-     * Prapare response for server sent events
-     * @param userId 
-     * @returns 
-     */
-    async getShowEventResponse(userId: string): Promise<{
-        'show_id': string,
-        'energy': string,
-    }[]> {
-       return await this.voteService.fetchShowWiseVoteCounter(userId)
-    }
 }
 

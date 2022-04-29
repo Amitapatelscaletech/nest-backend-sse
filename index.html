@@ -1,81 +1,66 @@
 <html>
     <body>
-        <div id="userName">TEST</div>
+       
         <table>
             <thead>
                
                 <tr>
                     <td>channel Name</td>
-                    <td>Subscriber Count</td>
-                    <td>Action</td>
+                    <td colspan = "3">Show Id</td>
+                    <td colspan = "2">Action</td>
                 </tr>
-                <!-- <tr >
-                    <td>Youtube</td>
-                    <td id="youtube">0</td>
-                    <td><input type="button" name="button" id="button" value="Subscribe" onclick="subscribe('youtube')"></td>
-                </tr>
-                <tr >
-                    <td>Custom</td>
-                    <td id="custom">0</td>
-                    <td><input type="button" name="button" id="button"  value="Subscribe" onclick="subscribe('custom')"></td>
-                </tr>
- -->
 
                 <tr >
                     <td>Misgermany</td>
                     <td id="custom">f360ae-6fec-4895-8390-84956f73fbae</td>
-                    <td><input type="button" name="button" id="button"  value="Subscribe" onclick="subscribe('missgermany')"></td>
+                    <td><input type="button" name="button" id="button"  value="Subscribe" onclick="subscribe('f360ae-6fec-4895-8390-84956f73fbae')"></td>
                 </tr>
 
                 <tr >
                     <td>Jeet first show</td>
                     <td id="custom">1251e0bf-fcee-417f-87e5-9f28c32c6844</td>
-                    <td><input type="button" name="button" id="button"  value="Subscribe" onclick="subscribe('jeet-first-show')"></td>
+                    <td><input type="button" name="button" id="button"  value="Subscribe" onclick="subscribe('1251e0bf-fcee-417f-87e5-9f28c32c6844')"></td>
                 </tr>
 
                 <tr >
                     <td>promi-pokernacht</td>
                     <td id="custom">076df2fe-8f42-4ac9-8390-0f0aafaca399</td>
-                    <td><input type="button" name="button" id="button"  value="Subscribe" onclick="subscribe('promi-pokernacht')"></td>
+                    <td><input type="button" name="button" id="button"  value="Subscribe" onclick="subscribe('076df2fe-8f42-4ac9-8390-0f0aafaca399')"></td>
                 </tr>
             </thead>
         </table>
-
-
         <ul id="myUserList">
            
         </ul>
 
 
         <script>
-
           let userName = prompt('Please,Enter yourname')
             function subscribe(channelName){
-               console.log('hhi')
-                    const response = fetch(`http://localhost:3000/show/${channelName}/subscribe`).then(resultData =>resultData.json()).then(result => {
+                    const response = fetch(`http://localhost:3000/show/${channelName}/subscribe/${userName}`).then(resultData =>resultData.json()).then(result => {
                         console.log(result)
                     })
             }
-            const evtSource = new EventSource('/show/pushvote/');
+
+           const evtSource = new EventSource(`/vote/pushvote/${userName}`);
             evtSource.addEventListener("message",function(e){
+
                 try{
                     console.log(e.data)
                     const resultset = JSON.parse(e.data)
                     var eventList = document.querySelector('ul');
                     for(user in resultset){
                         var newElement = document.createElement("li");
-                        newElement.textContent = "message: " + resultset[user].energy + ' _ ' + resultset[user].show_id;
+                        newElement.textContent = "message: " + resultset[user];
                         eventList.appendChild(newElement);
-
                     }
-
                 }catch{
 
                 }
 
             })
-
-
         </script>
+
+     
     </body>
 </html>

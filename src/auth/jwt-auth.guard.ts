@@ -16,22 +16,10 @@ export class AuthGuard implements CanActivate {
 
         try {
             const request = context.switchToHttp().getRequest();
-           // request.headers.access_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIwMjY4ZTMyMS1jN2FmLTRmYjktODI4Yi1mY2FjYmE2NDJmN2EiLCJnb29nbGVVc2VySWQiOiIwMjY4ZTMyMS1jN2FmLTRmYjktODI4Yi1mY2FjYmE2NDJmN2EiLCJpc05ld1VzZXIiOnRydWUsImV4cGlyZXNBdCI6MTY1MTc1NDEyOTQ1NSwiaWF0IjoxNjUxMTQ5MzMyfQ.PM3wpGAW8ygWCeqy6WFP5Pz0r_Ee1QD-5XqDh0CbpDs'
-            
-            const accessToken = request.headers.access_token as string
-            if (!accessToken) {
-                return false;
-            }
-
-            const tokenPayload = await this.verifyToken(accessToken as string);
-            if (!this.isTokenPayloadValid(tokenPayload)) {
-                throw new BadRequestException('Token has expired or not valid. Please login again');
-
-            }
-            request.tokenPayload = tokenPayload;
-            request.body.userId = tokenPayload.userId
             if(request.params.slug){
-                request.body.channelId = await this.showSubscribeService.getChannelId(request.params.slug)
+                request.body.userId =request.params.userId;
+                request.body.channelId = request.params.slug;
+                //request.body.channelId = await this.showSubscribeService.getChannelId(request.params.slug)
             }
            return true
 
