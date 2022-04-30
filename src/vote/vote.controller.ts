@@ -1,86 +1,115 @@
 
-import { Controller, Get, Post, Body, Delete, Param, Put, Req, Headers, UseGuards, UseInterceptors,  Sse,Res } from '@nestjs/common'
+import { Controller, Get, Post, Body, Param, Req, UseInterceptors, Res } from '@nestjs/common'
 import { Request, Response } from 'express';
-import {  interval, map } from 'rxjs'
 
 import { VoteService } from './vote.service'
 import { VoteShowEventValidatorPipe } from '../vote/vote.validator'
 import { VoteShowEventRequestDto, CreateVoteShowEventDto } from '../vote/vote_show_event'
 import { VoteInterceptor } from './vote.interceptor'
-import { object, string } from 'joi';
+import { string } from 'joi';
 
-interface LocalClientInterface{
-    [key:string]:string[] | string;
+interface LocalClientInterface {
+    [key: string]: string[] | string;
 }
+
+let clients: any = [];
 
 @Controller('vote')
 export class VoteController {
     constructor(private voteService: VoteService) { }
-    public userArray : Array<string> = []
-    public newClient:any = []
+    public userArray: Array<string> = []
+    public newClient: any = []
 
     @Post('/:channelId/events/:eventId')
     @UseInterceptors(VoteInterceptor)
-  async  showSubscribe(
+    async showSubscribe(
         @Req() req: Request,
+        @Res() res: Response,
         @Body(new VoteShowEventValidatorPipe()) CreateVoteShowEventDto: CreateVoteShowEventDto,
-    ){
-        const voteShowEventResult =  this.voteService.insert(CreateVoteShowEventDto);
-        await this.getShowEventResponse(req.body.userId)
+    ) {
+        const voteShowEventResult = this.voteService.insert(CreateVoteShowEventDto);
+        await this.getShowEventResponse()
+        res.json(this.newClient)
         return voteShowEventResult;
+
     }
 
-
-     /**
-     * Server sent Events, Send show wise energy Counter
-     * @param req 
+    /**
+     * Prapare response for server sent events, Send data to all clients
+     * @param userId 
      * @returns 
      */
-    //  @UseGuards(AuthGuard)
-      @Sse('pushvote/:userId')
-      async sse(
-          @Req() req: Request,
-          @Res() res: Response
-      ){
+    async getShowEventResponse() {
 
-        let localClient:LocalClientInterface = {
-            id : req.params.userId,
-            [req.params.userId.toString()]: []
+        for (let key in clients) {
+            // fetch user wise show energy counter
+            const userEnergyShowResult = await this.voteService.fetchShowWiseVoteCounter(clients[key]['id']);
+            let energyShowArray: any = [];
+            for (let keyys of userEnergyShowResult) {
+                energyShowArray.push(keyys.energy + '__' + keyys.show_id)
+            }
+
+            //Prepare updated show energy array according to client subscribe
+            this.newClient.find((clientObj: any) => {
+                if (clientObj.id === clients[key]['id']) {
+                    clientObj[`${clientObj.id}`] = energyShowArray;
+                }
+            });
         }
-        if((this.newClient.find((keysarray:any) => keysarray.id === req.params.userId)) === undefined){
+
+        // Send Events to all connected client
+        clients.forEach(
+            (client: any) => {
+                this.newClient.find((key: any) => {
+                    if (key.id === client.id) {
+                        client.res.write(`data: ${JSON.stringify(key[key.id])}\n\n`)
+                    }
+                })
+            })
+    }
+
+    /**
+     * How many client's are connected
+     * @param req 
+     * @param res 
+     */
+    @Get()
+    status(): number {
+        return clients.length;
+    }
+
+    /**
+     * make sse event handler 
+     * @param req 
+     * @param res 
+     */
+    @Get('/pushvote/:userId')
+    eventsHandler(
+        @Req() req: Request,
+        @Res() res: Response
+    ) {
+        res.set('Content-Type', 'text/event-stream')
+        res.set('Connection', 'keep-alive')
+        res.set('Cache-Control', 'no-cache')
+
+        const localClient: any = {
+            id: req.params.userId,
+            [req.params.userId.toString()]: [],
+        }
+
+        // Push data only if that user is not present 
+        if ((this.newClient.find((keysarray: any) => keysarray.id === req.params.userId)) === undefined) {
             this.newClient.push(localClient)
         }
-        
-        return interval(3000).pipe(map((_) => 
-          ({ data: 
-            `${JSON.stringify(this.newClient.find((keysarray:any) => keysarray.id === req.params.userId))}`
-            })));
-       
-      }
-  
-      /**
-       * Prapare response for server sent events
-       * @param userId 
-       * @returns 
-       */
-      async getShowEventResponse(userId: string) {
 
-       const resultsetfindArray = this.newClient.find((keysarray:any) => keysarray.id === userId );
-        const test: any = [];
-        const resultSet = await this.voteService.fetchShowWiseVoteCounter(userId);
+        const data = `data:${JSON.stringify(this.newClient.find((keysarray: any) => keysarray.id === req.params.userId))}\n\n`;
+        res.write(data)
 
-        resultSet.forEach(key => {
-            test.push(key['energy']+'_'+key['show_id'])
-            resultsetfindArray[`${userId}`] = test;
-        })
-
-        this.newClient.find((keysarray:any) => {
-            if(keysarray.id === userId){
-                keysarray[`${userId}`]=resultsetfindArray[`${userId}`];
-                return;
-            }
-        
-        });
-
-      }
+        const clientId = req.params.userId;
+        const newClient = {
+            id: clientId,
+            res
+        };
+        clients.push(newClient);
+    }
 }

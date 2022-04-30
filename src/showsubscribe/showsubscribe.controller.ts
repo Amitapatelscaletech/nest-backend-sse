@@ -40,19 +40,6 @@ export class ShowSubscribeController {
         return;
     }
 
-    /**
-     * Usre can subscribe show
-     * @param CreateShowSubscribeDto 
-     * @returns 
-     
-    @UseGuards(AuthGuard)
-    @Get('/:slug/subscribe')
-    showSubscribe(
-        @Body(new ShowSubscribeValidatorPipe()) CreateShowSubscribeDto: CreateShowSubscribeDto
-    ) {
-        return this.showsubscribeservice.create(CreateShowSubscribeDto);
-    }*/
-
      /**
      * Usre can subscribe show
      * @param CreateShowSubscribeDto 

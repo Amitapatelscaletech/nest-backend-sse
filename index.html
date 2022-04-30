@@ -35,6 +35,9 @@
 
 
         <script>
+            /**
+            * Subscribe First Channel 
+            * */
           let userName = prompt('Please,Enter yourname')
             function subscribe(channelName){
                     const response = fetch(`http://localhost:3000/show/${channelName}/subscribe/${userName}`).then(resultData =>resultData.json()).then(result => {
@@ -42,20 +45,23 @@
                     })
             }
 
-           const evtSource = new EventSource(`/vote/pushvote/${userName}`);
+            /**
+            * handle server sent event data 
+            * */
+            evtSource = new EventSource(`/vote/pushvote/${userName}`);
             evtSource.addEventListener("message",function(e){
 
                 try{
                     console.log(e.data)
-                    const resultset = JSON.parse(e.data)
+                    const userEnergyShowdata = JSON.parse(e.data)
                     var eventList = document.querySelector('ul');
-                    for(user in resultset){
+                    for(key in userEnergyShowdata){
                         var newElement = document.createElement("li");
-                        newElement.textContent = "message: " + resultset[user];
+                        newElement.textContent = userEnergyShowdata[key]
                         eventList.appendChild(newElement);
                     }
-                }catch{
-
+                }catch(err) {
+                    console.log('ERROR:', err)
                 }
 
             })
